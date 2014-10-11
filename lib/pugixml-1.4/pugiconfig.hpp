@@ -18,13 +18,13 @@
 // #define PUGIXML_WCHAR_MODE
 
 // Uncomment this to disable XPath
-// #define PUGIXML_NO_XPATH
+#define PUGIXML_NO_XPATH
 
 // Uncomment this to disable STL
 // #define PUGIXML_NO_STL
 
 // Uncomment this to disable exceptions
-// #define PUGIXML_NO_EXCEPTIONS
+#define PUGIXML_NO_EXCEPTIONS
 
 // Set this to control attributes for public classes/functions, i.e.:
 // #define PUGIXML_API __declspec(dllexport) // to export all public symbols from DLL
@@ -42,7 +42,7 @@
 // #include "pugixml.cpp"
 
 // Uncomment this to enable long long support
-// #define PUGIXML_HAS_LONG_LONG
+#define PUGIXML_HAS_LONG_LONG
 
 #endif
 
@@ -60,7 +60,7 @@
  *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
