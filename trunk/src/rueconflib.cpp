@@ -1,8 +1,4 @@
-#include <stdio.h>
-
-#include "logging.hpp"
-
-#include "Configuration.h"
+#include "rueconflib.hpp"
 
 namespace NRuevit
 {
@@ -14,29 +10,49 @@ const char *FALSE_STRING_VALUE = "FALSE";
 
 // ---------------------------------------------------------------------------
 
-void TProperty::Link ( void )
+void TPropertyBase::Link ( void )
 {
-	TProperty **p = &TSection::Current->Properties;
+	Section = TSection::Current;
+	TProperty **p = &Section->Properties;
 	while ( *p ) p = &(*p)->Next;
 	*p = this;
 }
 
+// ---------------------------------------------------------------------------
+
+void TPropertyBase::Change ( void )
+{
+	Changed = true;
+	Section->Change();
+}
+
+// ---------------------------------------------------------------------------
+
+TPropertyBase::TPropertyBase ( const std::string &_Name,
+			const std::string &_Description )
+	: Name ( _Name ), Description ( _Description )
+{
+	Link();
+}
+
+// ---------------------------------------------------------------------------
+
 template<> TProperty::TProperty ( const string &_Name, const int &_Value ) :
 	Name ( _Name )
-{LOG
+{
 	Value = std::to_string ( _Value );
 	Link();
 }
 
 template<> TProperty& TProperty::operator = ( const int &_Value )
-{LOG
+{
 	Value = std::to_string ( _Value );
 	Changed = true;
 	return *this;
 }
 
 template<> TProperty::operator int() const
-{LOG
+{
 	return std::stoi ( Value );
 }
 
@@ -44,20 +60,20 @@ template<> TProperty::operator int() const
 
 template<> TProperty::TProperty ( const string &_Name, const bool &_Value ) :
 	Name ( _Name )
-{LOG
+{
 	Value = _Value ? TRUE_STRING_VALUE : FALSE_STRING_VALUE;
 	Link();
 }
 
 template<> TProperty& TProperty::operator = ( const bool &_Value )
-{LOG
+{
 	Value = _Value ? TRUE_STRING_VALUE : FALSE_STRING_VALUE;
 	Changed = true;
 	return *this;
 }
 
 template<> TProperty::operator bool() const
-{LOG
+{
 	return Value == TRUE_STRING_VALUE;
 }
 
@@ -65,20 +81,20 @@ template<> TProperty::operator bool() const
 
 template<> TProperty::TProperty ( const string &_Name, const double &_Value ) :
 	Name ( _Name )
-{LOG
+{
 	Value = std::to_string ( _Value );
 	Link();
 }
 
 template<> TProperty& TProperty::operator = ( const double &_Value )
-{LOG
+{
 	Value = std::to_string ( _Value );
 	Changed = true;
 	return *this;
 }
 
 template<> TProperty::operator double() const
-{LOG
+{
 	return std::stod ( Value );
 }
 
@@ -86,27 +102,27 @@ template<> TProperty::operator double() const
 
 template<> TProperty::TProperty ( const string &_Name, const string &_Value ) :
 	Name ( _Name )
-{LOG
+{
 	Value = _Value;
 	Link();
 }
 
 template<> TProperty& TProperty::operator = ( const string &_Value )
-{LOG
+{
 	Value = _Value;
 	Changed = true;
 	return *this;
 }
 
 template<> TProperty::operator string() const
-{LOG
+{
 	return Value;
 }
 
 // ---------------------------------------------------------------------------
 
 TSection::TSection ( const string &_Name ) : Name ( _Name )
-{LOG
+{
 	if ( Current )
 	{
 		Parent = Current;
@@ -117,13 +133,19 @@ TSection::TSection ( const string &_Name ) : Name ( _Name )
 }
 
 void TSection::Append ( TSection *_Section )
-{LOG
+{
 	if ( Next ) Next->Append ( _Section );
 	else Next = _Section;
 }
 
+void TSection::Change ( void )
+{
+	Changed = true;
+	if ( Parent ) Parent->Change();
+}
+
 bool TSection::IsChanged ( void ) const
-{LOG
+{
 	return false;
 }
 
@@ -162,29 +184,29 @@ TConfiguration* TConfiguration::Configuration = 0;
 
 TConfiguration::TConfiguration ( const string &_Name, const string &_FileName ) :
 	TSection ( _Name ), FileName ( _FileName )
-{LOG
+{
 	if ( !Configuration ) Configuration = this;
 }
 
 TConfiguration::~TConfiguration ( void )
-{LOG
+{
 	Save();
 }
 
 void TConfiguration::Load ( void )
-{LOG
+{
 	Print();
 }
 
 void TConfiguration::Save ( void )
-{LOG
+{
 	Print();
 }
 
 // ---------------------------------------------------------------------------
 
 TSectionEnd::TSectionEnd ( void )
-{LOG
+{
 	TSection::Current = TSection::Current->Parent;
 }
 
@@ -192,7 +214,7 @@ TSectionEnd::TSectionEnd ( void )
 
 
 TConfigurationEnd::TConfigurationEnd ( void )
-{LOG
+{
 	TConfiguration::Configuration->Load();
 }
 

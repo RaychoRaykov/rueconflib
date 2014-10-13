@@ -1,5 +1,5 @@
-#ifndef __TCONFIGURATION_H__
-#define __TCONFIGURATION_H__
+#ifndef __RUECONFLIB_HPP__
+#define __RUECONFLIB_HPP__
 
 #include <string>
 
@@ -83,116 +83,165 @@
 // ---------------------------------------------------------------------------
 
 #ifndef CONFIGURATION
-#define CONFIGURATION RUECONFLIB_CONFIGURATION
+	#define CONFIGURATION RUECONFLIB_CONFIGURATION
 #endif
 
 #ifndef SECTION 
-#define SECTION RUECONFLIB_SECTION
+	#define SECTION RUECONFLIB_SECTION
+#endif
+
+#ifndef PROPERTY
+	#define PROPERTY RUECONFLIB_PROPERTY
+#endif
+
+#ifndef IMPLEMENT_CONFIGURATION
+	#define IMPLEMENT_CONFIGURATION RUECONFLIB_CONFIGURATION
+#endif
 
 // ---------------------------------------------------------------------------
 
-
-namespace NRuevit
+namespace NRueConfLib
 {
 
 // ---------------------------------------------------------------------------
 
-class TProperty
+class TPropertyBase
+{
+	friend class TSection;
+	friend class TConfiguration;
+	
+	protected:
+	
+		std::string Name, Description;
+		TProperty *Next = nullptr;
+		TSection *Section = nullptr;
+		bool NullFlag = true;
+		bool Changed = false;
+		
+		/*************************************************************************
+		 * Добавя свойството към списъка от свойства на избраната секция.
+		 * Добавя указател към секцията, която съдържа свойството.
+		 */
+		void Link ( void );
+		
+		/*************************************************************************
+		 * Вдига флага за промяна на свойството, както и флага за промяна 
+		 * на секцията, която го съдържа, чрез извикване на нейния метод
+		 * Change()
+		 */
+		void Change ( void );
+
+	public:
+	
+		/*************************************************************************
+		 * Връща описание на свойството. По принцип това описание трябва да може
+		 * да се запазва във файла и да се извлича от него. По този начин то
+		 * ще може да се променя в него.
+		 */
+		inline std::string GetDescription ( void ) const
+		{
+			return Description;
+		}
+
+		/*************************************************************************
+		 * Проверява дали стойността на свойството е NULL, т.е. няма зададена
+		 * стойност.
+		 */
+		inline bool IsNull ( void ) const 
+		{
+			return NullFlag;
+		}
+
+		/*************************************************************************
+		 * Задава стойност NULL на свойството. Това може да се проверява чрез
+		 * метода IsNull().
+		 */
+		inline void SetToNull ( void )
+		{
+			if ( !NullFlag )
+			{
+				NullFlag = true;
+				Change();
+			}
+		}
+
+		explicit TPropertyBase ( const std::string &_Name );
+		
+};
+
+template < typename TValueType >
+class TProperty : public TPropertyBase
 {
 	friend class TSection;
 	friend class TConfiguration;
 
 	private:
-		string Name, Value;
-		TProperty *Next = 0;
-		bool Changed = false;
 
-		void Link ( void );
-
-	public:
-		template < typename T > TProperty ( const string &_Name, const T &_Value ) :
-			Name ( _Name )
+		TValueType Value;
+	
+		inline TProperty ( const std::string &_Name ) : TPropertyBase ( _Name )
+		{
+		}
+	
+		TProperty ( const string &_Name, const TValueType &_Value ) :
+			TPropertyBase ( _Name ), Value ( _Value )
 		{
 			Link();
+			NullFlag = false;
 		}
 
 		// Задаване на нова стойност на свойството
-		template < typename T > TProperty& operator = ( const T &_Value )
+		TProperty& operator = ( const TValueType &_Value )
 		{
-			Value = "";
+			if ( !( Value == _Value ) )
+			{
+				Value = _Value;
+				NullFlag = false;
+				Change();
+			}
 			return *this;
 		}
 
 		// Конвертиране на свойството до основния тип данни
-		template < typename T > operator T() const
+		operator TValueType() const
 		{
-			return T();
-		}
-
-		// Връща специален текст за определени стойтости на параметъра
-		// Може да се използва при изброими типове за запис на четими стойност
-		template < typename T > string GetString ( const T &_Value ) const
-		{
-			return "";
+			return Value;
 		}
 
 };
-
-// ---------------------------------------------------------------------------
-
-template<> TProperty::TProperty ( const string &_Name, const int &_Value );
-template<> TProperty& TProperty::operator = ( const int &_Value );
-template<> TProperty::operator int() const;
-
-template<> TProperty::TProperty ( const string &_Name, const bool &_Value );
-template<> TProperty& TProperty::operator = ( const bool &_Value );
-template<> TProperty::operator bool() const;
-
-template<> TProperty::TProperty ( const string &_Name, const double &_Value );
-template<> TProperty& TProperty::operator = ( const double &_Value );
-template<> TProperty::operator double() const;
-
-template<> TProperty::TProperty ( const string &_Name, const string &_Value );
-template<> TProperty& TProperty::operator = ( const string &_Value );
-template<> TProperty::operator string() const;
 
 // ---------------------------------------------------------------------------
 
 class TSection
 {
-	friend class TProperty;
+	friend class TPropertyBase;
 	friend class TSectionEnd;
 
 	private:
-		string Name;
+		std::string Name;
 		TSection *Next = 0, *Childs = 0, *Parent = 0;
 		TProperty *Properties = 0;
 
-		bool IsChanged ( void ) const;
 		void Append ( TSection *_Section );
-
-	public:
+		void Change ( void );
+		
 		static TSection *Current;
 
-		explicit TSection ( const string &_Name );
+	public:
+		bool IsChanged ( void ) const;
+		explicit TSection ( const std::string &_Name );
 		void Print ( void );
 };
 
 // ---------------------------------------------------------------------------
 
-#define interface struct
-
-struct IRunnable
+struct IConfigurationFile
 {
-	virtual void Run ( void ) = 0;
-};
+	virtual void Load ( void ) = 0;
+	virtual void Save ( void ) = 0;
+}
 
-struct IChangeable
-{
-	virtual bool IsChanged ( void ) const = 0;
-};
-
-struct IConfiguration : public IChangeable
+struct IConfiguration
 {
 	enum EAutosaveIntervals
 	{
@@ -216,11 +265,6 @@ struct IConfiguration : public IChangeable
 	virtual void SetAutosaveInterval ( int _AutosaveMode ) = 0;
 	virtual int GetAutosaveInterval ( void ) const = 0;
 };
-
-struct IConfigurationParser
-{
-	virtual void Parse ( void ) = 0;
-}
 
 class TConfiguration : public IConfiguration, TSection
 {
