@@ -116,7 +116,7 @@ class TPropertyBase
 		TProperty *Next = nullptr;
 		TSection *Section = nullptr;
 		bool NullFlag = true;
-		bool Changed = false;
+		bool ChangedFlag = false;
 		
 		/*************************************************************************
 		 * Добавя свойството към списъка от свойства на избраната секция.
