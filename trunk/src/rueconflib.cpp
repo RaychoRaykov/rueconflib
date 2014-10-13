@@ -22,15 +22,13 @@ void TPropertyBase::Link ( void )
 
 void TPropertyBase::Change ( void )
 {
-	Changed = true;
+	ChangedFlag = true;
 	Section->Change();
 }
 
 // ---------------------------------------------------------------------------
 
-TPropertyBase::TPropertyBase ( const std::string &_Name,
-			const std::string &_Description )
-	: Name ( _Name ), Description ( _Description )
+TPropertyBase::TPropertyBase ( const std::string &_Name ) : Name ( _Name )
 {
 	Link();
 }
